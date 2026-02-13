@@ -9,7 +9,7 @@ Self-hosted, customizable themes, deploy on Netlify or Vercel.
 ## Features
 
 - **GitHub Streak Card** – Current streak, longest streak, total contributions, top languages, and profile stats in one card (with or without avatar).
-- **Skill Set Widget** – Badge-style card for your tech stack (skills from [Simple Icons](https://simpleicons.org/)).
+- **Skill Set Widget** – Badge-style card for your tech stack (skill icons from [Simple Icons](https://simpleicons.org/)).
 - **Themes** – Preset themes (dark, ocean, sunset, forest, purple) and custom colors via query params.
 - **API-first** – All cards are served as SVG from GET endpoints; no auth required.
 
