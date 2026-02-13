@@ -14,8 +14,12 @@ export function getRequestOrigin(request: NextRequest): string {
     return `${proto}://${forwardedHost}`
   }
   try {
-    return new URL(request.url).origin
+    return request.nextUrl.origin
   } catch {
-    return "https://localhost:3000"
+    try {
+      return new URL(request.url).origin
+    } catch {
+      return "https://localhost:3000"
+    }
   }
 }
