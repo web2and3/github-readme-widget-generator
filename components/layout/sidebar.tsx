@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Activity, Github, LayoutGrid } from "lucide-react"
+import { Activity, ExternalLink, Github, LayoutGrid } from "lucide-react"
+import { SITE_URL } from "@/lib/site-config"
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -43,7 +44,20 @@ export function Sidebar() {
           </Link>
         </nav>
       </div>
-      <div className="p-4 border-t border-slate-200">
+      <div className="p-4 border-t border-slate-200 space-y-2">
+        <a
+          href={SITE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600">
+            <ExternalLink className="h-5 w-5" />
+          </div>
+          <span className="font-semibold tracking-tight text-slate-800 hidden md:block">
+            Live app
+          </span>
+        </a>
         <a
           href="https://github.com/web2and3/github-readme-widgets-generator"
           target="_blank"

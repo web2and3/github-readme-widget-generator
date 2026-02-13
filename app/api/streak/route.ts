@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { getRequestOrigin } from "@/lib/request-origin"
 
 interface GitHubUser {
   login: string
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
     console.log(`[STREAK API] Fetching REAL data for: ${username}`)
 
     // First, get real contribution data
-    const baseUrl = new URL(request.url).origin
+    const baseUrl = getRequestOrigin(request)
     let contributionData = null
 
     try {
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
 
       // Generate more realistic data based on username
       const hash = hashString(username)
-      const totalContributions = 150 + (hash % 350) // 150-510 range
+      const totalContributions = 150 + (hash % 350) // 150-500 range
       const currentStreak = Math.max(0, hash % 12) // 0-11 range
       const longestStreak = Math.max(currentStreak + 2, 5 + (hash % 20)) // At least current+2, up to 25
 
@@ -194,7 +195,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error("[STREAK API] Unexpected error:", error)
-    return NextResponse.json({ error: "Failed to fetch GitHub data" }, { status: 510 })
+    return NextResponse.json({ error: "Failed to fetch GitHub data" }, { status: 500 })
   }
 }
 

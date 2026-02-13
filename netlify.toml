@@ -1,0 +1,10 @@
+# Next.js on Netlify – ensures API routes and server-side work correctly
+# Live app: https://github-readme-widget-generator.netlify.app
+#   Streak:  /streak   |   Skill Set: /skill-set
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

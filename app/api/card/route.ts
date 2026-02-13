@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import path from "path"
 import { readFile } from "fs/promises"
+import { getRequestOrigin } from "@/lib/request-origin"
 
 // Username that gets the custom background image (others use theme only)
 const BACKGROUND_USERNAME = "web2and3"
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
     // Fetch streak data
     let data
     try {
-      const baseUrl = new URL(request.url).origin
+      const baseUrl = getRequestOrigin(request)
       const streakResponse = await fetch(`${baseUrl}/api/streak?username=${username}`, {
         headers: { "User-Agent": "GitHub-Streak-Card/1.0" },
       })
