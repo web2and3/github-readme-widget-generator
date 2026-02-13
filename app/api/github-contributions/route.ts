@@ -1,93 +1,85 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// Enhanced GitHub scraping with better HTML parsing for current GitHub structure
+const CONTRIBUTION_FETCH_TIMEOUT_MS = 6_000
+
+function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number = CONTRIBUTION_FETCH_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeout))
+}
+
+// Try fast JSON APIs first; fall back to HTML scraping. Each method has a timeout to avoid blocking.
 async function fetchRealGitHubContributions(username: string): Promise<any> {
   console.log(`[REAL DATA] Fetching REAL GitHub contributions for: ${username}`)
 
-  // Method 1: GitHub's contribution graph
+  // Method 1 (fast): Jogruber contributions API – JSON, usually fast
   try {
-    console.log(`[REAL DATA] Method 1: GitHub contribution graph`)
+    const apiUrl = `https://github-contributions-api.jogruber.de/v4/${username}`
+    const response = await fetchWithTimeout(apiUrl, {
+      headers: { "User-Agent": "GitHub-Streak-Card/1.0", Accept: "application/json" },
+    })
+    if (response.ok) {
+      const data = await response.json()
+      const result = parseContributionsAPI(data, username)
+      if (result && result.totalContributions > 0) {
+        console.log(`[REAL DATA] Method 1 (jogruber) SUCCESS:`, result)
+        return result
+      }
+    }
+  } catch (error) {
+    console.log(`[REAL DATA] Method 1 (jogruber) failed:`, error)
+  }
 
+  // Method 2 (fast): GitHub readme streak stats – JSON
+  try {
+    const streakUrl = `https://github-readme-streak-stats.herokuapp.com/?user=${username}&format=json`
+    const response = await fetchWithTimeout(streakUrl, {
+      headers: { "User-Agent": "GitHub-Streak-Card/1.0", Accept: "application/json" },
+    })
+    if (response.ok) {
+      const data = await response.json()
+      const result = parseStreakStatsAPI(data, username)
+      if (result && result.totalContributions > 0) {
+        console.log(`[REAL DATA] Method 2 (streak-stats) SUCCESS:`, result)
+        return result
+      }
+    }
+  } catch (error) {
+    console.log(`[REAL DATA] Method 2 (streak-stats) failed:`, error)
+  }
+
+  // Method 3 (slower): GitHub profile HTML + parse contribution graph
+  try {
     const graphUrl = `https://github.com/${username}`
-    const response = await fetch(graphUrl, {
+    const response = await fetchWithTimeout(graphUrl, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        DNT: "1",
-        Connection: "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
       },
     })
-
     if (response.ok) {
       const html = await response.text()
       const result = parseGitHubContributionGraph(html, username)
       if (result && result.totalContributions > 0) {
-        console.log(`[REAL DATA] Method 1 SUCCESS - Real data found:`, result)
+        console.log(`[REAL DATA] Method 3 (HTML graph) SUCCESS:`, result)
         return result
       }
     }
   } catch (error) {
-    console.log(`[REAL DATA] Method 1 failed:`, error)
+    console.log(`[REAL DATA] Method 3 (HTML graph) failed:`, error)
   }
 
-  // Method 2: GitHub streak stats API (fallback)
+  // Method 4 (fallback): Direct scraping multiple URLs
   try {
-    console.log(`[REAL DATA] Method 2: GitHub streak stats API`)
-
-    const streakUrl = `https://github-readme-streak-stats.herokuapp.com/?user=${username}&format=json`
-    const response = await fetch(streakUrl, {
-      headers: {
-        "User-Agent": "GitHub-Streak-Card/1.0",
-        Accept: "application/json",
-      },
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      const result = parseStreakStatsAPI(data, username)
-      if (result && result.totalContributions > 0) {
-        console.log(`[REAL DATA] Method 2 SUCCESS - Real streak data found:`, result)
-        return result
-      }
-    }
-  } catch (error) {
-    console.log(`[REAL DATA] Method 2 failed:`, error)
-  }
-
-  // Method 3: Alternative GitHub contributions API (fallback)
-  try {
-    console.log(`[REAL DATA] Method 3: Alternative contributions API`)
-
-    const apiUrl = `https://github-contributions-api.jogruber.de/v4/${username}`
-    const response = await fetch(apiUrl, {
-      headers: {
-        "User-Agent": "GitHub-Streak-Card/1.0",
-        Accept: "application/json",
-      },
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      const result = parseContributionsAPI(data, username)
-      if (result && result.totalContributions > 0) {
-        console.log(`[REAL DATA] Method 3 SUCCESS - Real data found:`, result)
-        return result
-      }
-    }
-  } catch (error) {
-    console.log(`[REAL DATA] Method 3 failed:`, error)
-  }
-
-  // Method 4: Direct GitHub scraping (fallback)
-  try {
-    console.log(`[REAL DATA] Method 4: Direct GitHub scraping`)
     const result = await scrapeGitHubDirectly(username)
     if (result && result.totalContributions > 0) {
-      console.log(`[REAL DATA] Method 4 SUCCESS - Direct scraping worked:`, result)
+      console.log(`[REAL DATA] Method 4 (direct scrape) SUCCESS:`, result)
       return result
     }
   } catch (error) {
@@ -112,15 +104,19 @@ async function scrapeGitHubDirectly(username: string): Promise<any> {
     for (const url of urls) {
       try {
         console.log(`[DIRECT SCRAPE] Trying URL: ${url}`)
-        const response = await fetch(url, {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Cache-Control": "no-cache",
+        const response = await fetchWithTimeout(
+          url,
+          {
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+              "Accept-Language": "en-US,en;q=0.9",
+              "Cache-Control": "no-cache",
+            },
           },
-        })
+          5_000,
+        )
 
         if (response.ok) {
           const html = await response.text()

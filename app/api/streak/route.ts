@@ -26,99 +26,89 @@ export async function GET(request: NextRequest) {
 
     console.log(`[STREAK API] Fetching REAL data for: ${username}`)
 
-    // First, get real contribution data
     const baseUrl = getRequestOrigin(request)
-    let contributionData = null
-
-    try {
-      console.log(`[STREAK API] Fetching REAL contribution data for: ${username}`)
-      const contributionsResponse = await fetch(`${baseUrl}/api/github-contributions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username }),
-      })
-
-      if (contributionsResponse.ok) {
-        contributionData = await contributionsResponse.json()
-        console.log(`[STREAK API] Got REAL contribution data:`, {
-          totalContributions: contributionData.totalContributions,
-          currentStreak: contributionData.currentStreak,
-          longestStreak: contributionData.longestStreak,
-          dataSource: contributionData.dataSource,
-        })
-      } else {
-        console.log(`[STREAK API] Contribution API returned ${contributionsResponse.status}`)
-      }
-    } catch (error) {
-      console.log(`[STREAK API] Contribution data fetch failed:`, error)
+    const ghHeaders = {
+      Accept: "application/vnd.github.v3+json" as const,
+      "User-Agent": "GitHub-Streak-Card/1.0",
+    }
+    const fallbackUser = {
+      login: username,
+      avatar_url: `https://github.com/${username}.png`,
+      html_url: `https://github.com/${username}`,
+      public_repos: 10,
+      followers: 5,
+      following: 10,
+      created_at: "2020-01-01T00:00:00Z",
+      name: username,
     }
 
-    // Get GitHub user profile data
-    let userData = null
-    try {
-      console.log(`[STREAK API] Fetching GitHub user profile for: ${username}`)
-      const userResponse = await fetch(`https://api.github.com/users/${username}`, {
-        headers: {
-          Accept: "application/vnd.github.v3+json",
-          "User-Agent": "GitHub-Streak-Card/1.0",
-        },
-      })
-
-      if (userResponse.ok) {
-        userData = await userResponse.json()
-        console.log(`[STREAK API] Got GitHub user data for: ${username}`)
-      } else {
-        console.log(`[STREAK API] GitHub API returned ${userResponse.status} for ${username}`)
-
-        // Create fallback user data
-        userData = {
-          login: username,
-          avatar_url: `https://github.com/${username}.png`,
-          html_url: `https://github.com/${username}`,
-          public_repos: 10,
-          followers: 5,
-          following: 10,
-          created_at: "2020-01-01T00:00:00Z",
-          name: username,
+    // Run all external fetches in parallel (biggest speed win)
+    const [contributionData, userData, reposResult] = await Promise.all([
+      // 1) Contributions (internal API; often the slowest)
+      (async () => {
+        try {
+          const res = await fetch(`${baseUrl}/api/github-contributions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username }),
+          })
+          if (res.ok) return await res.json()
+        } catch (e) {
+          console.log(`[STREAK API] Contribution fetch failed:`, e)
         }
-      }
-    } catch (error) {
-      console.log(`[STREAK API] GitHub user API error:`, error)
+        return null
+      })(),
+      // 2) GitHub user profile
+      (async () => {
+        try {
+          const res = await fetch(`https://api.github.com/users/${username}`, { headers: ghHeaders })
+          if (res.ok) return await res.json()
+          return fallbackUser
+        } catch (e) {
+          console.log(`[STREAK API] User fetch failed:`, e)
+          return fallbackUser
+        }
+      })(),
+      // 3) Repos (for topLanguages / stars / forks)
+      (async () => {
+        try {
+          const res = await fetch(
+            `https://api.github.com/users/${username}/repos?per_page=100&sort=updated`,
+            { headers: ghHeaders },
+          )
+          if (res.ok) return await res.json()
+        } catch (e) {
+          console.log(`[STREAK API] Repos fetch failed:`, e)
+        }
+        return []
+      })(),
+    ])
 
-      // Create fallback user data
-      userData = {
-        login: username,
-        avatar_url: `https://github.com/${username}.png`,
-        html_url: `https://github.com/${username}`,
-        public_repos: 10,
-        followers: 5,
-        following: 10,
-        created_at: "2020-01-01T00:00:00Z",
-        name: username,
-      }
+    if (contributionData) {
+      console.log(`[STREAK API] Got REAL contribution data:`, {
+        totalContributions: contributionData.totalContributions,
+        currentStreak: contributionData.currentStreak,
+        longestStreak: contributionData.longestStreak,
+        dataSource: contributionData.dataSource,
+      })
     }
 
     // If we don't have contribution data, create realistic fallback
-    if (!contributionData) {
-      console.log(`[STREAK API] Creating realistic fallback contribution data for: ${username}`)
-
-      // Generate more realistic data based on username
+    let finalContributionData = contributionData
+    if (!finalContributionData) {
+      console.log(`[STREAK API] Using fallback contribution data for: ${username}`)
       const hash = hashString(username)
-      const totalContributions = 150 + (hash % 350) // 150-500 range
-      const currentStreak = Math.max(0, hash % 12) // 0-11 range
-      const longestStreak = Math.max(currentStreak + 2, 5 + (hash % 20)) // At least current+2, up to 25
-
+      const totalContributions = 150 + (hash % 350)
+      const currentStreak = Math.max(0, hash % 12)
+      const longestStreak = Math.max(currentStreak + 2, 5 + (hash % 20))
       const today = new Date()
       const streakStartDate =
         currentStreak > 0
           ? new Date(today.getTime() - (currentStreak - 1) * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
           : today.toISOString().split("T")[0]
-
-      contributionData = {
+      finalContributionData = {
         totalContributions,
-        contributionsThisYear: Math.floor(totalContributions * 0.65), // 65% this year
+        contributionsThisYear: Math.floor(totalContributions * 0.65),
         currentStreak,
         longestStreak,
         streakStartDate,
@@ -130,33 +120,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch repositories for language data
     const languages: { [key: string]: number } = {}
     let totalStars = 0
     let totalForks = 0
-
-    try {
-      const reposResponse = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`, {
-        headers: {
-          Accept: "application/vnd.github.v3+json",
-          "User-Agent": "GitHub-Streak-Card/1.0",
-        },
-      })
-
-      if (reposResponse.ok) {
-        const repos = await reposResponse.json()
-        repos.forEach((repo: any) => {
-          if (repo.language) {
-            languages[repo.language] = (languages[repo.language] || 0) + 1
-          }
-          totalStars += repo.stargazers_count || 0
-          totalForks += repo.forks_count || 0
-        })
-        console.log(`[STREAK API] Got ${repos.length} repositories for ${username}`)
-      }
-    } catch (error) {
-      console.log(`[STREAK API] Repos fetch failed, using defaults:`, error)
-    }
+    const repos = Array.isArray(reposResult) ? reposResult : []
+    repos.forEach((repo: any) => {
+      if (repo.language) languages[repo.language] = (languages[repo.language] || 0) + 1
+      totalStars += repo.stargazers_count || 0
+      totalForks += repo.forks_count || 0
+    })
+    if (repos.length > 0) console.log(`[STREAK API] Got ${repos.length} repositories for ${username}`)
 
     const topLanguages = Object.entries(languages)
       .sort(([, a], [, b]) => b - a)
@@ -170,7 +143,7 @@ export async function GET(request: NextRequest) {
     const result = {
       username: userData.login,
       name: userData.name,
-      ...contributionData,
+      ...finalContributionData,
       publicRepos: userData.public_repos,
       followers: userData.followers,
       following: userData.following,
