@@ -1,5 +1,6 @@
 # GitHub Readme Widgets Generator
-Generate SVG cards for your **GitHub contribution streak** and **skill set** to use in your profile or README. Self-hosted, customizable themes, deploy on Netlify or Vercel.
+Generate SVG cards for your **GitHub contribution streak** and **skill set** to use in your profile or README. 
+Self-hosted, customizable themes, deploy on Netlify or Vercel.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
