@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -62,6 +63,18 @@ export function StreakCardFlow({
   usernameDisabled = false,
 }: StreakCardFlowProps) {
   const steps = WIDGET_STEPS
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  // Radix Tabs generate different IDs on server vs client; render only after mount to avoid hydration mismatch.
+  if (!mounted) {
+    return (
+      <div className="w-full space-y-6" aria-hidden>
+        <div className="inline-flex h-10 w-full items-center justify-center rounded-md bg-muted p-1" />
+        <div className="min-h-[320px] rounded-md bg-muted/50" />
+      </div>
+    )
+  }
 
   return (
     <Tabs

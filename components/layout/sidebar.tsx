@@ -22,8 +22,11 @@ export function Sidebar() {
           <span className="font-medium text-slate-700 dark:text-slate-300">Made by web2and3</span>
         </a>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 overflow-auto">
         <nav className="p-2 flex flex-col gap-1">
+          <span className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            Widget generators
+          </span>
           <Link
             href="/streak"
             className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
@@ -46,6 +49,12 @@ export function Sidebar() {
             <LayoutGrid className="h-5 w-5 shrink-0" />
             Skill Set Widget
           </Link>
+
+          <div className="my-2 border-t border-slate-200 dark:border-slate-700" role="separator" aria-hidden />
+
+          <span className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            GitHub tools
+          </span>
           <Link
             href="/followers-check"
             className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
