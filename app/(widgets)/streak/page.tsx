@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { toast } from "sonner"
 import { WIDGET_STEPS, presetThemes } from "@/lib/widgets-types"
 import type { StepId, CardTheme } from "@/lib/widgets-types"
@@ -11,6 +12,7 @@ import { StepFooter } from "@/components/layout/step-footer"
 import { StreakCardFlow } from "@/components/widgets/streak-card-flow"
 
 export default function StreakPage() {
+  const { data: session } = useSession()
   const { streak } = useWidgets()
   const {
     username,
@@ -128,6 +130,11 @@ export default function StreakPage() {
     if (canGoBack) setActiveTab(steps[currentStepIndex - 1].id)
   }
 
+  const githubLogin = session?.user && "login" in session.user ? (session.user as { login?: string }).login : undefined
+  useEffect(() => {
+    if (githubLogin) setUsername(githubLogin)
+  }, [githubLogin, setUsername])
+
   return (
     <>
       <HeaderBar
@@ -159,6 +166,7 @@ export default function StreakPage() {
           applyPresetTheme={applyPresetTheme}
           generateReadme={generateReadme}
           handleSubmit={handleSubmit}
+          usernameDisabled={!!githubLogin}
         />
       </MainContent>
       <StepFooter

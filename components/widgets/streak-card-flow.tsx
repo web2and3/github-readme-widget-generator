@@ -33,6 +33,8 @@ interface StreakCardFlowProps {
   applyPresetTheme: (name: string) => void
   generateReadme: () => string
   handleSubmit: (e: React.FormEvent) => void
+  /** When true, username is taken from logged-in user and input is disabled */
+  usernameDisabled?: boolean
 }
 
 export function StreakCardFlow({
@@ -57,6 +59,7 @@ export function StreakCardFlow({
   applyPresetTheme,
   generateReadme,
   handleSubmit,
+  usernameDisabled = false,
 }: StreakCardFlowProps) {
   const steps = WIDGET_STEPS
 
@@ -74,11 +77,14 @@ export function StreakCardFlow({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-green-600" />
-              Enter GitHub Username
+              {usernameDisabled ? "Your GitHub card" : "Enter GitHub Username"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
+              {usernameDisabled && (
+                <p className="text-sm text-slate-500">Using your account: <strong>{username}</strong></p>
+              )}
               <div className="flex gap-2">
                 <Input
                   type="text"
@@ -86,7 +92,7 @@ export function StreakCardFlow({
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="flex-1"
-                  disabled={loading}
+                  disabled={loading || usernameDisabled}
                 />
                 <Button
                   type="submit"
@@ -107,7 +113,7 @@ export function StreakCardFlow({
                 </Button>
               </div>
             </form>
-            <div className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center gap-4 p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg border border-emerald-200 dark:border-emerald-500/30">
               <Label className="text-sm font-medium">Avatar Display:</Label>
               <div className="flex items-center gap-2">
                 <input
@@ -120,7 +126,7 @@ export function StreakCardFlow({
                   }}
                   className="rounded"
                 />
-                <Label htmlFor="useEmbeddedAvatar" className="text-sm">
+                <Label htmlFor="useEmbeddedAvatar" className="text-sm text-emerald-700 dark:text-emerald-300">
                   Use embedded avatar (better for README.md)
                 </Label>
               </div>
@@ -174,22 +180,19 @@ export function StreakCardFlow({
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-4">
-                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                  <div className="text-2xl font-bold text-green-600">{streakData.currentStreak}</div>
-                  <div className="text-sm text-green-800">Current Streak</div>
-                  <div className="text-xs text-green-600">REAL-TIME</div>
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg border border-emerald-200 dark:border-emerald-500/30">
+                  <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{streakData.currentStreak}</div>
+                  <div className="text-sm text-emerald-800 dark:text-emerald-300">Current Streak</div>
                 </div>
-                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="text-2xl font-bold text-blue-600">{streakData.longestStreak}</div>
-                  <div className="text-sm text-blue-800">Longest Streak</div>
-                  <div className="text-xs text-blue-600">REAL-TIME</div>
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg border border-emerald-200 dark:border-emerald-500/30">
+                  <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{streakData.longestStreak}</div>
+                  <div className="text-sm text-emerald-800 dark:text-emerald-300">Longest Streak</div>
                 </div>
-                <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-                  <div className="text-2xl font-bold text-purple-600">
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg border border-emerald-200 dark:border-emerald-500/30">
+                  <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                     {streakData.totalContributions.toLocaleString()}
                   </div>
-                  <div className="text-sm text-purple-800">Total Contributions</div>
-                  <div className="text-xs text-purple-600">REAL-TIME</div>
+                  <div className="text-sm text-emerald-800 dark:text-emerald-300">Total Contributions</div>
                 </div>
               </div>
             </CardContent>

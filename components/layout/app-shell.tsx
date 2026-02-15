@@ -9,9 +9,9 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="flex min-h-screen bg-slate-50/80">
+    <div className="h-full flex flex-1 min-h-0 bg-slate-50/80 dark:bg-slate-950">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-auto">
         {children}
       </div>
     </div>

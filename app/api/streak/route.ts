@@ -4,6 +4,15 @@ import { getRequestOrigin } from "@/lib/request-origin"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
+const CONTRIBUTION_REQUEST_TIMEOUT_MS = 10_000
+const GITHUB_API_TIMEOUT_MS = 5_000
+
+function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeout))
+}
+
 interface GitHubUser {
   login: string
   avatar_url: string
@@ -44,14 +53,18 @@ export async function GET(request: NextRequest) {
 
     // Run all external fetches in parallel (biggest speed win)
     const [contributionData, userData, reposResult] = await Promise.all([
-      // 1) Contributions (internal API; often the slowest)
+      // 1) Contributions (internal API; optimized with parallel fast sources)
       (async () => {
         try {
-          const res = await fetch(`${baseUrl}/api/github-contributions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username }),
-          })
+          const res = await fetchWithTimeout(
+            `${baseUrl}/api/github-contributions`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username }),
+            },
+            CONTRIBUTION_REQUEST_TIMEOUT_MS,
+          )
           if (res.ok) return await res.json()
         } catch (e) {
           console.log(`[STREAK API] Contribution fetch failed:`, e)
@@ -61,7 +74,11 @@ export async function GET(request: NextRequest) {
       // 2) GitHub user profile
       (async () => {
         try {
-          const res = await fetch(`https://api.github.com/users/${username}`, { headers: ghHeaders })
+          const res = await fetchWithTimeout(
+            `https://api.github.com/users/${username}`,
+            { headers: ghHeaders },
+            GITHUB_API_TIMEOUT_MS,
+          )
           if (res.ok) return await res.json()
           return fallbackUser
         } catch (e) {
@@ -72,9 +89,11 @@ export async function GET(request: NextRequest) {
       // 3) Repos (for topLanguages / stars / forks)
       (async () => {
         try {
-          const res = await fetch(
-            `https://api.github.com/users/${username}/repos?per_page=100&sort=updated`,
+          // Only need language + stars/forks; 30 repos is enough for top languages
+          const res = await fetchWithTimeout(
+            `https://api.github.com/users/${username}/repos?per_page=30&sort=updated`,
             { headers: ghHeaders },
+            GITHUB_API_TIMEOUT_MS,
           )
           if (res.ok) return await res.json()
         } catch (e) {

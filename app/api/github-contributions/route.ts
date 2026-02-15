@@ -1,73 +1,82 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-const CONTRIBUTION_FETCH_TIMEOUT_MS = 6_000
+const FAST_FETCH_TIMEOUT_MS = 3_500
+const SLOW_FETCH_TIMEOUT_MS = 5_000
 
 function fetchWithTimeout(
   url: string,
   options: RequestInit,
-  timeoutMs: number = CONTRIBUTION_FETCH_TIMEOUT_MS,
+  timeoutMs: number = FAST_FETCH_TIMEOUT_MS,
 ): Promise<Response> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeout))
 }
 
-// Try fast JSON APIs first; fall back to HTML scraping. Each method has a timeout to avoid blocking.
+// Try fast JSON APIs in parallel; fall back to HTML scraping. First success wins.
 async function fetchRealGitHubContributions(username: string): Promise<any> {
   console.log(`[REAL DATA] Fetching REAL GitHub contributions for: ${username}`)
 
-  // Method 1 (fast): Jogruber contributions API – JSON, usually fast
-  try {
+  // Method 1 (fast): Jogruber contributions API – JSON
+  const tryJogruber = async (): Promise<any> => {
     const apiUrl = `https://github-contributions-api.jogruber.de/v4/${username}`
     const response = await fetchWithTimeout(apiUrl, {
       headers: { "User-Agent": "GitHub-Streak-Card/1.0", Accept: "application/json" },
     })
-    if (response.ok) {
-      const data = await response.json()
-      const result = parseContributionsAPI(data, username)
-      if (result && result.totalContributions > 0) {
-        console.log(`[REAL DATA] Method 1 (jogruber) SUCCESS:`, result)
-        return result
-      }
+    if (!response.ok) return null
+    const data = await response.json()
+    const result = parseContributionsAPI(data, username)
+    if (result?.totalContributions > 0) {
+      console.log(`[REAL DATA] Method 1 (jogruber) SUCCESS`)
+      return result
     }
-  } catch (error) {
-    console.log(`[REAL DATA] Method 1 (jogruber) failed:`, error)
+    return null
   }
 
   // Method 2 (fast): GitHub readme streak stats – JSON
-  try {
+  const tryStreakStats = async (): Promise<any> => {
     const streakUrl = `https://github-readme-streak-stats.herokuapp.com/?user=${username}&format=json`
     const response = await fetchWithTimeout(streakUrl, {
       headers: { "User-Agent": "GitHub-Streak-Card/1.0", Accept: "application/json" },
     })
-    if (response.ok) {
-      const data = await response.json()
-      const result = parseStreakStatsAPI(data, username)
-      if (result && result.totalContributions > 0) {
-        console.log(`[REAL DATA] Method 2 (streak-stats) SUCCESS:`, result)
-        return result
-      }
+    if (!response.ok) return null
+    const data = await response.json()
+    const result = parseStreakStatsAPI(data, username)
+    if (result?.totalContributions > 0) {
+      console.log(`[REAL DATA] Method 2 (streak-stats) SUCCESS`)
+      return result
     }
-  } catch (error) {
-    console.log(`[REAL DATA] Method 2 (streak-stats) failed:`, error)
+    return null
   }
+
+  // Run both fast APIs in parallel – first valid result wins (max wait ~3.5s instead of 6s+6s sequential)
+  const [jogruberResult, streakStatsResult] = await Promise.all([
+    tryJogruber().catch(() => null),
+    tryStreakStats().catch(() => null),
+  ])
+  const fastResult = jogruberResult ?? streakStatsResult
+  if (fastResult) return fastResult
 
   // Method 3 (slower): GitHub profile HTML + parse contribution graph
   try {
     const graphUrl = `https://github.com/${username}`
-    const response = await fetchWithTimeout(graphUrl, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
+    const response = await fetchWithTimeout(
+      graphUrl,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
       },
-    })
+      SLOW_FETCH_TIMEOUT_MS,
+    )
     if (response.ok) {
       const html = await response.text()
       const result = parseGitHubContributionGraph(html, username)
-      if (result && result.totalContributions > 0) {
-        console.log(`[REAL DATA] Method 3 (HTML graph) SUCCESS:`, result)
+      if (result?.totalContributions > 0) {
+        console.log(`[REAL DATA] Method 3 (HTML graph) SUCCESS`)
         return result
       }
     }
@@ -78,8 +87,8 @@ async function fetchRealGitHubContributions(username: string): Promise<any> {
   // Method 4 (fallback): Direct scraping multiple URLs
   try {
     const result = await scrapeGitHubDirectly(username)
-    if (result && result.totalContributions > 0) {
-      console.log(`[REAL DATA] Method 4 (direct scrape) SUCCESS:`, result)
+    if (result?.totalContributions > 0) {
+      console.log(`[REAL DATA] Method 4 (direct scrape) SUCCESS`)
       return result
     }
   } catch (error) {
@@ -604,9 +613,21 @@ export async function POST(request: NextRequest) {
       dataSource: result.dataSource,
     })
 
-    return NextResponse.json(result, {
+    // Return only fields needed for the card (smaller payload = faster)
+    const slim = {
+      totalContributions: result.totalContributions,
+      contributionsThisYear: result.contributionsThisYear,
+      currentStreak: result.currentStreak,
+      longestStreak: result.longestStreak,
+      streakStartDate: result.streakStartDate,
+      longestStreakStart: result.longestStreakStart,
+      longestStreakEnd: result.longestStreakEnd,
+      dataSource: result.dataSource,
+    }
+
+    return NextResponse.json(slim, {
       headers: {
-        "Cache-Control": "public, max-age=0", // Cache for 5 minutes
+        "Cache-Control": "public, max-age=0",
       },
     })
   } catch (error) {

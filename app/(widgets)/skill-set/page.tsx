@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { toast } from "sonner"
 import { defaultSkillSetTheme, WIDGET_STEPS, presetSkillSetThemes } from "@/lib/widgets-types"
 import type { SkillSetTheme } from "@/lib/widgets-types"
@@ -11,6 +12,7 @@ import { StepFooter } from "@/components/layout/step-footer"
 import { SkillSetFlow } from "@/components/widgets/skill-set-flow"
 
 export default function SkillSetPage() {
+  const { data: session } = useSession()
   const { skillSet } = useWidgets()
   const {
     skillSetActiveTab,
@@ -88,6 +90,11 @@ export default function SkillSetPage() {
     if (skillSetCanGoBack) setSkillSetActiveTab(steps[skillSetStepIndex - 1].id)
   }
 
+  const githubLogin = session?.user && "login" in session.user ? (session.user as { login?: string }).login : undefined
+  useEffect(() => {
+    if (githubLogin) setSkillSetUsername(githubLogin)
+  }, [githubLogin, setSkillSetUsername])
+
   return (
     <>
       <HeaderBar
@@ -107,8 +114,6 @@ export default function SkillSetPage() {
           skillSetTheme={skillSetTheme}
           skillSetCardKey={skillSetCardKey}
           skillSetCardUrl={skillSetCardUrl}
-          skillSetUsername={skillSetUsername}
-          setSkillSetUsername={setSkillSetUsername}
           updateSkillSetThemeColor={updateSkillSetThemeColor}
           applySkillSetPreset={applySkillSetPreset}
           generateSkillSetReadme={generateSkillSetReadme}

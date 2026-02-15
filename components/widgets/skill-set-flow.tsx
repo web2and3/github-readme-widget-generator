@@ -29,8 +29,6 @@ interface SkillSetFlowProps {
   skillSetTheme: SkillSetTheme
   skillSetCardKey: number
   skillSetCardUrl: string
-  skillSetUsername: string
-  setSkillSetUsername: (v: string) => void
   updateSkillSetThemeColor: (key: keyof SkillSetTheme, color: string) => void
   applySkillSetPreset: (name: string) => void
   generateSkillSetReadme: () => string
@@ -49,8 +47,6 @@ export function SkillSetFlow({
   skillSetTheme,
   skillSetCardKey,
   skillSetCardUrl,
-  skillSetUsername,
-  setSkillSetUsername,
   updateSkillSetThemeColor,
   applySkillSetPreset,
   generateSkillSetReadme,
@@ -193,14 +189,6 @@ export function SkillSetFlow({
               <p className="text-xs text-muted-foreground">
                 Type to see suggestions; select with click or Enter, or press comma to finish and type next skill.
               </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label>GitHub username (optional)</Label>
-              <Input
-                value={skillSetUsername}
-                onChange={(e) => setSkillSetUsername(e.target.value)}
-                placeholder="e.g. github"
-              />
             </div>
             <Button onClick={handleGenerate} className="bg-green-600 hover:bg-green-700">
               Generate

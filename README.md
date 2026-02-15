@@ -17,7 +17,7 @@ Self-hosted, customizable themes, deploy on Netlify or Vercel.
 
 ## Live Demo
 
-**[Open the generator →](https://github-readme-widget-generator.netlify.app)**
+**[Open the generator →](https://gitstrength.netlify.app)**
 
 - **Streak card:** `/streak` — Enter a GitHub username, customize theme, copy the image URL for your README.
 - **Skill set:** `/skill-set` — Add skills (comma-separated), pick a theme, copy the image URL.
@@ -39,7 +39,7 @@ Open [http://localhost:3000](http://localhost:3000). The app redirects to the st
 
 ## Use in Your README
 
-Replace `YOUR_DEPLOYMENT_URL` with your deployed base URL (e.g. `https://github-readme-widget-generator.netlify.app`).
+Replace `YOUR_DEPLOYMENT_URL` with your deployed base URL (e.g. `https://gitstrength.netlify.app`).
 
 ### Streak card (no avatar)
 

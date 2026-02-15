@@ -24,7 +24,7 @@ export function StepFooter({
   const stepsLength = WIDGET_STEPS.length
 
   return (
-    <div className="flex items-center justify-center border-t border-slate-200 bg-white/80 h-[69px] gap-12">
+    <div className="flex items-center justify-center border-t border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 h-[69px] gap-12">
       <Button
         type="button"
         variant="outline"
@@ -35,7 +35,7 @@ export function StepFooter({
         <ChevronLeft className="h-4 w-4" />
         Back
       </Button>
-      <span className="text-sm text-slate-500">
+      <span className="text-sm text-slate-500 dark:text-slate-400">
         Step {currentStepIndex + 1} of {stepsLength}
       </span>
       <Button
