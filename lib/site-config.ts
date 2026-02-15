@@ -5,6 +5,10 @@
 export const SITE_URL =
   process.env.NEXT_PUBLIC_APP_URL ?? "https://gitstrength.netlify.app"
 
+/** GitHub repo URL for "Copy README" link (image clicks through to repo). */
+export const REPO_URL =
+  process.env.NEXT_PUBLIC_REPO_URL ?? "https://github.com/web2and3/gitstrength-github-improver"
+
 export const SITE_NAME = "GitStrength"
 export const SITE_DESCRIPTION =
   "Make your GitHub profile beautiful with README widgets. Unfollow checker, contribution streak, and stats—free tools to attract visitors. Open source."

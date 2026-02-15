@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { WIDGET_STEPS, presetThemes } from "@/lib/widgets-types"
 import type { StepId, CardTheme } from "@/lib/widgets-types"
 import { useWidgets } from "@/contexts/widgets-context"
+import { REPO_URL } from "@/lib/site-config"
 import { HeaderBar } from "@/components/layout/header-bar"
 import { MainContent } from "@/components/layout/main-content"
 import { StepFooter } from "@/components/layout/step-footer"
@@ -80,7 +81,7 @@ export default function StreakPage() {
     const cardUrl = `${baseUrl}/api/${cardEndpoint}?username=${streakData.username}&theme=${encodeURIComponent(JSON.stringify(theme))}`
     return `<div align="center">
 
-![GitHub Streak](${cardUrl})
+[![GitHub Streak](${cardUrl})](${REPO_URL})
 
 </div>`
   }, [streakData, theme, useEmbeddedAvatar])

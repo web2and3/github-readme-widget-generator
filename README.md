@@ -1,5 +1,9 @@
 # GitStrength – GitHub README Widgets & Profile Tools
 
+<div align="center">
+  <img src="public/readme-back.png" alt="GitStrength" width="100%" />
+</div>
+
 Make your **GitHub profile** beautiful and attractive with README widgets. Free **streak cards**, **skill set** badges, and **followers check**—open source, self-hosted. Deploy on Netlify or Vercel.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
