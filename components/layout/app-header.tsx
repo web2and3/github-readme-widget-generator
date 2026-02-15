@@ -41,7 +41,7 @@ export function AppHeader() {
             <Moon className="h-5 w-5 hidden dark:block" />
           </button>
           <a
-            href="https://github.com/web2and3/github-readme-widgets-generator"
+            href="https://github.com/web2and3/gitstrength-github-improver"
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-lg p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -102,7 +102,7 @@ export function AppHeader() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <a
-                    href="https://github.com/web2and3/github-readme-widgets-generator"
+                    href="https://github.com/web2and3/gitstrength-github-improver"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 cursor-pointer"

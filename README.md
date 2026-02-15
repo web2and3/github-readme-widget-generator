@@ -1,6 +1,6 @@
-# GitHub Readme Widgets Generator
-Generate SVG cards for your **GitHub contribution streak** and **skill set** to use in your profile or README. 
-Self-hosted, customizable themes, deploy on Netlify or Vercel.
+# GitStrength – GitHub README Widgets & Profile Tools
+
+Make your **GitHub profile** beautiful and attractive with README widgets. Free **streak cards**, **skill set** badges, and **followers check**—open source, self-hosted. Deploy on Netlify or Vercel.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -8,36 +8,60 @@ Self-hosted, customizable themes, deploy on Netlify or Vercel.
 
 ## Features
 
-- **GitHub Streak Card** – Current streak, longest streak, total contributions, top languages, and profile stats in one card (with or without avatar).
-- **Skill Set Widget** – Badge-style card for your tech stack (skill icons from [Simple Icons](https://simpleicons.org/)).
-- **Themes** – Preset themes (dark, ocean, sunset, forest, purple) and custom colors via query params.
-- **API-first** – All cards are served as SVG from GET endpoints; no auth required.
+### Widget generators (for your README)
+
+- **GitHub Streak Card** – Current streak, longest streak, total contributions, top languages, and profile stats in one SVG card (with or without avatar).
+- **Skill Set Widget** – Badge-style card for your tech stack (icons from [Simple Icons](https://simpleicons.org/)).
+- **Themes** – Preset themes and custom colors via query params. API-first: all cards are served as SVG; no auth required for public card URLs.
+
+### GitHub tools (sign in with GitHub)
+
+- **Followers Check** – See unfollowers, not mutuals, followers, following. Whitelist users, follow/unfollow from the app. Requires GitHub OAuth.
 
 ---
 
-## Live Demo
+## Live demo
 
-**[Open the generator →](https://gitstrength.netlify.app)**
+**[Open the app →](https://gitstrength.netlify.app)**
 
-- **Streak card:** `/streak` — Enter a GitHub username, customize theme, copy the image URL for your README.
-- **Skill set:** `/skill-set` — Add skills (comma-separated), pick a theme, copy the image URL.
+| Page | Description |
+|------|-------------|
+| **/** | Home – Continue with GitHub to get started |
+| **/streak** | Streak card generator – Enter username, customize theme, copy image URL for README |
+| **/skill-set** | Skill set widget – Add skills, pick theme, copy image URL |
+| **/followers-check** | Followers tool – Unfollowers, not mutuals, follow/unfollow (requires sign-in) |
 
 ---
 
-## Quick Start
+## Quick start
 
 ```bash
-git clone https://github.com/your-username/GitHub-Streak-Card.git
-cd GitHub-Streak-Card
+git clone https://github.com/web2and3/gitstrength-github-improver.git
+cd gitstrength-github-improver
 pnpm install
-pnpm run dev
+cp .env.example .env
+# Edit .env: add GITHUB_ID, GITHUB_SECRET, NEXTAUTH_SECRET, NEXTAUTH_URL (see docs/SETUP.md)
+pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The app redirects to the streak card generator.
+Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## Use in Your README
+## Documentation
+
+| Doc | Description |
+|-----|-------------|
+| [**Setup**](docs/SETUP.md) | Local development, environment variables |
+| [**Deployment**](docs/DEPLOYMENT.md) | Netlify & Vercel, production env |
+| [**API reference**](docs/API.md) | Card and data endpoints |
+| [**Features**](docs/FEATURES.md) | Overview of widgets and tools |
+| [**Contributing**](docs/CONTRIBUTING.md) | How to contribute |
+| [**Recommended categories**](docs/RECOMMENDED_CATEGORIES.md) | Ideas for new widgets/tools |
+
+---
+
+## Use in your README
 
 Replace `YOUR_DEPLOYMENT_URL` with your deployed base URL (e.g. `https://gitstrength.netlify.app`).
 
@@ -56,63 +80,44 @@ Replace `YOUR_DEPLOYMENT_URL` with your deployed base URL (e.g. `https://gitstre
 ### Custom theme (JSON, URL-encoded)
 
 ```markdown
-<img src="YOUR_DEPLOYMENT_URL/api/card?username=YOUR_GITHUB_USERNAME&theme=%7B%22backgroundColor%22%3A%22%230f172a%22%2C%22textColor%22%3A%22%23e2e8f0%22%2C%22accentColor%22%3A%22%230ea5e9%22%7D" alt="GitHub Streak Card" width="100%" />
+<img src="YOUR_DEPLOYMENT_URL/api/card?username=YOUR_GITHUB_USERNAME&theme=%7B%22backgroundColor%22%3A%22%230f172a%22%2C%22textColor%22%3A%22%23e2e8f0%22%2C%22accentColor%22%3A%220ea5e9%22%7D" alt="GitHub Streak Card" width="100%" />
 ```
 
 ### Skill set widget
 
 ```markdown
-<img src="YOUR_DEPLOYMENT_URL/api/skill-set-card?skills=TypeScript,React,Next.js,Node.js,Tailwind CSS" alt="Skill Set" width="100%" />
-```
-
-With theme (optional):
-
-```markdown
-<img src="YOUR_DEPLOYMENT_URL/api/skill-set-card?skills=TypeScript,React&theme=%7B%22backgroundColor%22%3A%22%231a1b27%22%2C%22textColor%22%3A%22%23e2e8f0%22%7D" alt="Skill Set" width="100%" />
+<img src="YOUR_DEPLOYMENT_URL/api/skill-set-card?skills=TypeScript,React,Next.js,Node.js,Tailwind%20CSS" alt="Skill Set" width="100%" />
 ```
 
 ---
 
-## API Reference
+## API overview
 
-| Endpoint | Method | Query params | Returns |
-|----------|--------|--------------|---------|
-| `/api/card` | GET | `username` (required), `theme` (optional, JSON string) | SVG image |
-| `/api/card-with-avatar` | GET | `username` (required), `theme` (optional) | SVG image |
-| `/api/streak` | GET | `username` (required) | JSON (streak + profile data) |
-| `/api/skill-set-card` | GET | `skills` (required, comma-separated), `theme` (optional), `username` (optional) | SVG image |
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/card` | GET | Streak card SVG (no avatar) |
+| `/api/card-with-avatar` | GET | Streak card SVG (with avatar) |
+| `/api/streak` | GET | JSON streak + profile data |
+| `/api/skill-set-card` | GET | Skill set SVG |
+| `/api/github-contributions` | POST | Contribution/streak data (used internally) |
 
-All card endpoints return **SVG** with `Content-Type: image/svg+xml`. They are forced dynamic and use `Cache-Control: no-store` so query parameters are respected on Netlify.
-
----
-
-## Deploy (Netlify)
-
-1. Connect this repo to [Netlify](https://www.netlify.com/).
-2. Build command: `npm run build`
-3. Publish directory: `.next`
-4. Ensure **@netlify/plugin-nextjs** is used (add to `netlify.toml` if needed).
-
-Example `netlify.toml` (already in the repo):
-
-```toml
-[build]
-  command = "npm run build"
-  publish = ".next"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-```
-
-Set `NEXT_PUBLIC_APP_URL` to your Netlify URL (e.g. `https://your-site.netlify.app`) so “Copy README” links use the correct base URL.
+See [docs/API.md](docs/API.md) for query parameters and response formats.
 
 ---
 
-## Tech Stack
+## Deploy
 
-- **Next.js 16** (App Router)
-- **React 19**, **TypeScript**, **Tailwind CSS**
-- **Radix UI**, **Lucide** icons
+- **Netlify:** Connect repo, build command `pnpm build` (or `npm run build`), publish `.next`. Use [@netlify/plugin-nextjs](https://docs.netlify.com/frameworks/next-js/). Set `NEXT_PUBLIC_APP_URL` and `NEXTAUTH_URL` to your site URL.
+- **Vercel:** Connect repo; Next.js is detected. Set env vars in the dashboard.
+
+Details: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+---
+
+## Tech stack
+
+- **Next.js 16** (App Router), **React 19**, **TypeScript**, **Tailwind CSS**
+- **NextAuth.js** (GitHub OAuth), **Radix UI**, **Lucide** icons
 
 ---
 

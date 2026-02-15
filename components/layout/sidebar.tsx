@@ -70,7 +70,7 @@ export function Sidebar() {
       </div>
       <div className="p-4 border-t border-slate-200 dark:border-slate-700 h-[69px] flex items-center">
         <a
-          href="https://github.com/web2and3/github-readme-widgets-generator"
+          href="https://github.com/web2and3/gitstrength-github-improver"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
